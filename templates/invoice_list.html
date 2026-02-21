@@ -1,0 +1,170 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>روکش {{ cover.id }}</title>
+  <style>
+    @page  {
+      size: A4;
+      margin: 5mm;
+      @top-center { content: element(header) }
+      @bottom-center { content: element(footer) }
+    }
+    * {font-size: 12px;  font-family: 'B Nazanin',serif}
+    tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    td, th { padding: 5px }
+  </style>
+</head>
+<body dir="rtl">
+  <div id="header">
+    <h3 style="text-align: center; margin-bottom: 15px">روکش {% if cover.type == 'عادی' %}تنخواه{% else %}سند مستقیم{% endif %}  شماره {{cover.no}} ({% if cover.locked %}قفل شده، {% if cover.accepted %}تأیید شده{% elif cover.accepted == False %}عدم تأیید{% else %}در حال بررسی{% endif %}{% else %}درحال ویرایش{% endif %})</h3>
+    <div style="display: grid; grid-template-columns: auto auto; margin-bottom: 25px">
+      <div>
+        <table style="width: 100%">
+          <tbody>
+            <tr>
+              <td style="width: 40px">تعداد سند:</td>
+              <td style="font-weight: bold">{{cover.invoice_count}} ردیف</td>
+            </tr>
+            <tr>
+              <td>جمع مبلغ:</td>
+              <td style="font-weight: bold">{{cover.total_price_sum}} ریال</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <table style="width: 100%">
+          <tbody>
+            <tr>
+              <td style="width: 20px">واحد:</td>
+              <td style="font-weight: bold">{{cover.unit.title}}</td>
+            </tr>
+            <tr>
+              <td>تاریخ:</td>
+              <td style="font-weight: bold">
+                <span>از </span>
+                <span dir="ltr">{{cover.begin_date}}</span>
+                <span> تا </span>
+                <span dir="ltr">{{cover.end_date}}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="content">
+    <table style="width: 100%; text-align: center; border-collapse: collapse">
+      <thead>
+        <tr style="border: 1px solid lightgrey; padding: 5px 0 5px 0; background-color: lightgrey">
+          <th>ردیف</th>
+          <th>شماره</th>
+          <th>مرکز هزینه</th>
+          <th>تاریخ</th>
+          <th>ردیف معین</th>
+          <th>مبلغ</th>
+          <th>ارزش افزوده</th>
+          <th>مبلغ کل</th>
+          <th>فاکتور</th>
+          <th>طرف مقابل</th>
+          <th>شرح</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in cover.invoices.all %}
+        <tr style="border: 1px solid lightgrey; padding: 5px 0 5px 0">
+          <td>{{forloop.counter}}</td>
+          <td>{{item.no}}</td>
+          <td>{% if item.unit %}{{ item.unit.title }}{% else %}مرکز هزینه مشترک{% endif %}</td>
+          <td style="width: 50px">{{item.date}}</td>
+          <td>{{item.category.title}}</td>
+          <td>{{item.gross_price}}</td>
+          <td>{{item.value_added_price}}</td>
+          <td>{{item.price|intcomma:False}}</td>
+          <td>{% if item.has_paper %}✔{% endif %} </td>
+          <td>{{item.issuer}}</td>
+          <td>{{item.description}}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="border: 1px solid lightgrey; padding: 5px 0 5px 0; background-color: lightgrey">
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th>جمع</th>
+          <th>{{cover.price_sum}}</th>
+          <th>{{cover.value_added_sum}}</th>
+          <th>{{cover.total_price_sum}}</th>
+          <th></th>
+          <th></th>
+          <th></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+<div id="footer" style="page-break-inside: avoid; break-inside: avoid;">
+  <table style="width: 100%; text-align: center; margin-top: 1cm; page-break-inside: avoid; break-inside: avoid;">
+    <tbody>
+
+      <tr>
+        <td>تنخواه‌دار</td>
+        <td>عامل مالی</td>
+        <td>{{cover.unit.title}}</td>
+        <td>مدیرکل اداری مالی</td>
+        <td>معاون برنامه‌ریزی، پشتیبانی و توسعه منابع انسانی</td>
+      </tr>
+
+      <tr>
+        <td><b>{{cover.user.get_full_name}}</b></td>
+        <td><b>فاطمه کرامتی</b></td>
+        <td><b>{{cover.unit.manager.get_full_name}}</b></td>
+        <td><b>بنیامین عبداللهی</b></td>
+        <td><b>مجید جاودانی</b></td>
+      </tr>
+
+    <tr>
+      <td>
+        {% if cover.locked %}
+          <img src="{{ cover.user.signature_url }}" style="height:80px">
+        {% endif %}
+      </td>
+
+      <td>
+        {% if cover.confirm1 %}
+          <img src="http://it.local/media/users_signature/%DA%A9%D8%B1%D8%A7%D9%85%D8%AA%DB%8C.jpg" style="height:80px">
+        {% endif %}
+      </td>
+
+      <td>
+        {% if cover.confirm2 %}
+          <img src="{{ cover.unit.manager.signature_url }}" style="height:70px">
+        {% endif %}
+      </td>
+
+      <td>
+        {% if cover.accepted %}
+          <img src="http://it.local/media/users_signature/%D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D9%87%DB%8C.jpg" style="height:80px">
+        {% endif %}
+      </td>
+
+      <td>
+        {% if cover.confirm3 %}
+          <img src="http://it.local/media/users_signature/1000204540-removebg-preview_qsuATwX.png" style="height:80px">
+        {% endif %}
+      </td>
+    </tr>
+
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

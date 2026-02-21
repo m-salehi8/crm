@@ -1,0 +1,103 @@
+{% load humanize %}
+{% load pm_filters %}
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>فرآیند {{ flow.id }}</title>
+  <style>
+    @page  {
+      size: A4;
+      margin: 5mm;
+      @top-center { content: element(header) }
+    }
+    * {font-size: 12px;  font-family: 'B Nazanin',serif}
+    tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    td, th { padding: 5px }
+  </style>
+</head>
+<body dir="rtl">
+  <div id="header">
+    <h3 style="text-align: center; margin-bottom: 10px">شناسنامه فرآیند {{node.flow.flow_pattern.title}}</h3>
+    <div style="display: grid; grid-template-columns: auto auto; margin-bottom: 25px">
+      <div>
+        <table style="width: 100%">
+          <tbody>
+            <tr>
+              <td>نام متقاضی:</td>
+              <td style="font-weight: bold">{{node.flow.user.get_full_name}} ({{node.flow.user.personnel_code}})</td>
+            </tr>
+            <tr>
+              <td>واحد سازمانی:</td>
+              <td style="font-weight: bold">{{node.flow.user.post.unit.title}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <table style="width: 100%">
+          <tbody>
+            <tr>
+              <td>شماره فرآیند:</td>
+              <td style="font-weight: bold">{{node.flow.id}}</td>
+            </tr>
+            <tr>
+              <td>پست سازمانی:</td>
+              <td style="font-weight: bold">{{node.flow.user.post.title}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="content">
+  <div style="padding: 20px; border-radius: 10px; border: thin solid lightgrey">
+    <table style="width: 100%">
+      <tbody>
+        {% for node_field in node|node_fields %}
+          {% if node_field.type == 'table' %}
+            <tr style="page-break-inside: auto; break-inside: auto;">
+              <td>{{ node_field.label }}</td>
+              <td>
+                <table style="border: solid thin #26a69a; width: 100%; table-layout: fixed">
+                  <thead>
+                    <tr>
+                      {% for head in node_field.head %}
+                        <td>{{head.label}}</td>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in node_field.rows %}
+                      <tr>
+                        {% for cell in row %}
+                          <td style="border-top: solid thin #26a69a">
+                            <b style="white-space: pre-line">{{cell.answer}}</b>
+                          </td>
+                        {% endfor %}
+
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+
+              </td>
+            </tr>
+          {% elif node_field.answer %}
+            <tr>
+              <td>{{ node_field.label }}</td>
+              <td>{{ node_field.answer }}</td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+table td:not([data-role="number"]), table th:not([data-role="number"]) {
+    text-align: right !important;
+    direction: rtl !important;
+}
+table th {
+    font-weight: bold !important;
+}
+table caption.text-left {
+    text-align: center !important;
+    color: cornflowerblue;
+}
+#logout-form button.text-left {
+    text-align: right !important;
+}
+#header-inner {
+    padding-left: 160px;
+}
+#tabs-wrapper li {
+    display: none !important;
+}
+.vjDateField {
+    border: lightgrey thin solid !important;
+    border-radius: 5px;
+}
+a.block {
+    font-size: x-large;
+    color: cornflowerblue !important;
+}

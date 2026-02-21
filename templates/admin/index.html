@@ -1,0 +1,88 @@
+{% extends 'admin/base.html' %}
+{% load i18n unfold %}
+
+{% block title %}
+{{ title }} | {{ site_title|default:_('Django site admin') }}
+{% endblock %}
+
+{% block branding %}
+{% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    {% component "unfold/components/card.html" with class="lg:mb-0" %}
+    <div class="flex flex-row gap-4 items-center">
+        <div
+            class="block p-3 rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/20 dark:text-primary-200">
+            <span class="material-symbols-outlined text-2xl">people</span>
+        </div>
+        <div>
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "کاربران فعال" %}</h3>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ kpi_users }}</p>
+        </div>
+    </div>
+    {% endcomponent %}
+
+    {% component "unfold/components/card.html" with class="lg:mb-0" %}
+    <div class="flex flex-row gap-4 items-center">
+        <div
+            class="block p-3 rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/20 dark:text-primary-200">
+            <span class="material-symbols-outlined text-2xl">assignment</span>
+        </div>
+        <div>
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "پروژه‌ها" %}</h3>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ kpi_projects }}</p>
+        </div>
+    </div>
+    {% endcomponent %}
+
+    {% component "unfold/components/card.html" with class="lg:mb-0" %}
+    <div class="flex flex-row gap-4 items-center">
+        <div
+            class="block p-3 rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/20 dark:text-primary-200">
+            <span class="material-symbols-outlined text-2xl">task</span>
+        </div>
+        <div>
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "وظایف باز" %}</h3>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ kpi_jobs_pending }}</p>
+        </div>
+    </div>
+    {% endcomponent %}
+
+    {% component "unfold/components/card.html" with class="lg:mb-0" %}
+    <div class="flex flex-row gap-4 items-center">
+        <div
+            class="block p-3 rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/20 dark:text-primary-200">
+            <span class="material-symbols-outlined text-2xl">meeting_room</span>
+        </div>
+        <div>
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "جلسات امروز" %}</h3>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ kpi_sessions_today }}</p>
+        </div>
+    </div>
+    {% endcomponent %}
+</div>
+
+<!-- Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+    {% component "unfold/components/card.html" with title=_("انواع فرآیندها") %}
+    {% component "unfold/components/chart/bar.html" with component_class="FlowTypeChart" %}
+    {% endcomponent %}
+    {% endcomponent %}
+
+    {% component "unfold/components/card.html" with title=_("فعالیت‌های اخیر") %}
+    {% component "unfold/components/chart/line.html" with component_class="ActivityChart" %}
+    {% endcomponent %}
+    {% endcomponent %}
+</div>
+
+<!-- Recent Actions (Default Django) -->
+{% component "unfold/components/card.html" with title=_("آخرین تغییرات") %}
+<div id="content-main">
+    {% include "admin/app_list.html" with app_list=available_apps show_changelinks=False %}
+</div>
+{% endcomponent %}
+
+{% endblock %}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8" />
+    <title>Simple Captcha Test</title>
+</head>
+<body style="font-family: sans-serif; padding: 30px;">
+
+    <img id="captchaImage" style="border:1px solid #888; margin-bottom:10px;" />
+
+    <div>
+        <input id="answer" placeholder="Enter Captcha" />
+        <button onclick="verifyCaptcha()">Verify</button>
+        <button onclick="loadCaptcha()">Reload</button>
+    </div>
+
+    <p id="message"></p>
+
+    <script>
+        let captchaId = null;
+
+        function loadCaptcha() {
+            fetch("http://192.168.19.174:8000/api/captcha/")
+                .then(res => res.json())
+                .then(data => {
+                    captchaId = data.captcha_id;
+                    document.getElementById("captchaImage").src = data.image_base64;
+                });
+        }
+
+        function verifyCaptcha() {
+            const answer = document.getElementById("answer").value;
+            fetch("http://192.168.19.174:8000/api/captcha/verify/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    captcha_id: captchaId,
+                    answer: answer
+                })
+            })
+            .then(res => {
+                if (res.ok) {
+                    document.getElementById("message").innerText = "✅ Correct!";
+                } else {
+                    document.getElementById("message").innerText = "❌ Wrong or Expired!";
+                }
+            });
+        }
+
+        loadCaptcha();
+    </script>
+
+</body>
+</html>
