@@ -6,6 +6,14 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from core.models import UserAuthLog, User
 import jdatetime
+from rest_framework.throttling import AnonRateThrottle
+
+class LoginMinuteThrottle(AnonRateThrottle):
+    scope = 'login_min'
+
+class LoginHourThrottle(AnonRateThrottle):
+    scope = 'login_hour'
+
 
 
 def get_ip(request):
@@ -19,6 +27,7 @@ def get_ip(request):
 class LoginAPIView(APIView):
     authentication_classes = []
     permission_classes = []
+    throttle_classes = [LoginMinuteThrottle, LoginHourThrottle]
 
     def post(self, request):
         username = request.data.get('username')
