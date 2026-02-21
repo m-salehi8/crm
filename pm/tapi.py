@@ -20,6 +20,18 @@ def _patch_task_list_response(results, informee_job_ids):
     return results
 
 
+def _parse_int_list(param_value):
+    """تبدیل پارامتر چندمقداره به لیست اعداد معتبر (مثلاً '1,2,3' یا '1')."""
+    if not param_value or param_value.strip() in ('None', 'null', ''):
+        return None
+    out = []
+    for x in param_value.split(','):
+        x = x.strip()
+        if x.isdigit():
+            out.append(int(x))
+    return out if out else None
+
+
 class TaskListV4(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -41,6 +53,21 @@ class TaskListV4(GenericAPIView):
     def get_informee_job_ids(self, user, archive):
         return set(Job.objects.filter(informees=user, archive=archive).values_list('id', flat=True))
 
+    def apply_filters(self, qs, search, creator_ids, assignee_ids):
+        """اعمال فیلتر جستجو، ایجادکننده و مسئول روی کوئری‌ست."""
+        if search and search.strip():
+            qs = qs.filter(
+                Q(job__title__icontains=search.strip()) | Q(job__note__icontains=search.strip())
+            )
+        if creator_ids:
+            owner_job_ids = Task.objects.filter(
+                is_owner=True, user_id__in=creator_ids
+            ).values_list('job_id', flat=True).distinct()
+            qs = qs.filter(job_id__in=owner_job_ids)
+        if assignee_ids:
+            qs = qs.filter(user_id__in=assignee_ids)
+        return qs
+
     def get_paginated_tasks(self, qs, request, informee_job_ids):
         """صفحه‌بندی روی Task؛ برای هر job فقط یک تسک برمی‌گردد (PostgreSQL distinct('job_id'))."""
         job_ids = qs.order_by('job_id').values_list('job_id', flat=True).distinct()
@@ -58,14 +85,20 @@ class TaskListV4(GenericAPIView):
         if not user.is_authenticated:
             return Response({"detail": "Authentication credentials were not provided."}, status=401)
 
+        # فیلترها
         archive = request.GET.get('archive', 'false') == 'true'
         team = request.GET.get('team', 'false') == 'true'
+        search = (request.GET.get('search') or request.GET.get('q') or '').strip() or None
+        creator_ids = _parse_int_list(request.GET.get('creators') or request.GET.get('creator'))
+        assignee_ids = _parse_int_list(request.GET.get('assignees') or request.GET.get('assignee'))
+
         tag_id = request.GET.get('tag')
         if tag_id in ("None", "null"):
             tag_id = None
         status_param = request.GET.get('status')
 
         base_qs = self.get_base_queryset(user, archive, team)
+        base_qs = self.apply_filters(base_qs, search, creator_ids, assignee_ids)
         informee_job_ids = self.get_informee_job_ids(user, archive)
 
         # حالت pagination یک ستون
@@ -138,6 +171,9 @@ class TaskListV4(GenericAPIView):
             "meta": {
                 "archive": archive,
                 "team": team,
+                "search": search,
+                "creators": creator_ids or [],
+                "assignees": assignee_ids or [],
                 "page_size": ColumnPagination.page_size,
                 "generated_at": timezone.now(),
                 "total_board_count": total_board_count
