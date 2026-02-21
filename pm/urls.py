@@ -1,7 +1,7 @@
 from .views import *
 from django.urls import path
 # from .ai import TranscribeAudioView
-from pm.tapi import TaskListV4, TaskListV5
+from pm.tapi import TaskListV4
 
 
 urlpatterns = [
@@ -13,7 +13,6 @@ urlpatterns = [
     path('job-tags/', GetOrUpdateUserTagList.as_view()),
     path('task-list/', TaskList.as_view()),
     path('task-list/v2/', TaskListV4.as_view()),
-    path('task-list/v3/', TaskListV5.as_view()),
     path('update-tasks-status-and-order/', UpdateTasksStatusAndOrder.as_view()),
     path('task/<int:pk>/', TaskDetail.as_view()),
     path('remove-job/<int:pk>/', RemoveJob.as_view()),
