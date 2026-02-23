@@ -7,7 +7,7 @@ from weasyprint import HTML
 from core.permissions import *
 from django.conf import settings
 from rest_framework import status
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
 from rest_framework.authtoken.models import Token
@@ -295,6 +295,17 @@ class ChangePassword(GenericAPIView):
             return Response(data='رمز عبور شما تغییر کرد')
         return Response(data='رمز وارد شده صحیح نیست', status=status.HTTP_400_BAD_REQUEST)
 
+class ChangePasswordV2(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ChangePasswordSerializer
+
+    def post(self, request):
+        ser = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+        request.user.set_password(ser.validated_data['new_password'])
+        request.user.save()
+        return Response(data='رمز عبور شما تغییر کرد')
 
 class ResetPassword(GenericAPIView):
     def post(self, request):
@@ -644,3 +655,56 @@ class LoginThemeApi(APIView):
         login_bg.bg = request.data['login_bg']
         login_bg.save()
         return Response({'login_bg': login_bg.bg_url,})
+
+
+class MediaDownloadView(GenericAPIView):
+    """
+    API دانلود مدیا: فرانت آدرس فایل (نسبت به media) را می‌فرستد، پاسخ = فایل برای دانلود.
+    GET: ?path=uploads/file.pdf
+    POST: {"path": "uploads/file.pdf"}
+    مسیر می‌تواند نسبی باشد (مثلاً uploads/doc.pdf) یا با پیشوند /media/ (خود /media/ حذف می‌شود).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _get_path_param(self, request):
+        if request.method == 'GET':
+            return request.query_params.get('path') or request.GET.get('path')
+        return (request.data.get('path') if hasattr(request.data, 'get') else None) or request.query_params.get('path')
+
+    def get(self, request):
+        return self._serve_file(request)
+
+    def post(self, request):
+        return self._serve_file(request)
+
+    def _serve_file(self, request):
+        import os
+        path_param = self._get_path_param(request)
+        if not path_param or not path_param.strip():
+            return Response(
+                {'detail': 'پارامتر path الزامی است.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        path_param = path_param.strip()
+        # حذف پیشوند MEDIA_URL اگر کاربر آدرس کامل فرستاده
+        if path_param.startswith(settings.MEDIA_URL):
+            path_param = path_param[len(settings.MEDIA_URL):].lstrip('/')
+        elif path_param.startswith('/'):
+            path_param = path_param.lstrip('/')
+        # محدود کردن به داخل MEDIA_ROOT و جلوگیری از path traversal
+        media_root = os.path.abspath(settings.MEDIA_ROOT)
+        full_path = os.path.normpath(os.path.join(media_root, path_param))
+        if not full_path.startswith(media_root) or not os.path.isfile(full_path):
+            return Response(
+                {'detail': 'فایل یافت نشد یا دسترسی مجاز نیست.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        filename = os.path.basename(full_path)
+        try:
+            f = open(full_path, 'rb')
+            return FileResponse(f, as_attachment=True, filename=filename)
+        except OSError:
+            return Response(
+                {'detail': 'خطا در خواندن فایل.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

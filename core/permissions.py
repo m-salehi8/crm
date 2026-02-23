@@ -1,4 +1,19 @@
+from django.conf import settings
 from rest_framework.permissions import BasePermission
+
+
+class IsAllowedIP(BasePermission):
+    """فقط درخواست‌هایی که از IPهای مجاز (مثلاً برای API دانلود مدیا) باشند قبول می‌شوند."""
+    def has_permission(self, request, view):
+        allowed = getattr(settings, 'MEDIA_DOWNLOAD_ALLOWED_IPS', ())
+        if not allowed:
+            return True  # اگر تنظیم نشده، محدودیت اعمال نشود
+        x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded:
+            client_ip = x_forwarded.split(',')[0].strip()
+        else:
+            client_ip = request.META.get('REMOTE_ADDR', '')
+        return client_ip in allowed
 
 
 class IsFlowAdmin(BasePermission):

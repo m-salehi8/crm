@@ -1,8 +1,41 @@
+import re
 from .models import *
 from fd.models import Reserve
 from django.db.models import Q
 from fn.models import InvoiceCover
 from rest_framework import serializers
+
+
+def validate_strong_password(value):
+    """رمز باید بیشتر از ۸ کاراکتر و شامل عدد، حرف کوچک، حرف بزرگ و نماد باشد."""
+    if len(value) < 8:
+        raise serializers.ValidationError('رمز عبور باید حداقل ۸ کاراکتر باشد.')
+    if not re.search(r'[0-9]', value):
+        raise serializers.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+    if not re.search(r'[a-z]', value):
+        raise serializers.ValidationError('رمز عبور باید حداقل یک حرف کوچک انگلیسی داشته باشد.')
+    if not re.search(r'[A-Z]', value):
+        raise serializers.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?`~]', value):
+        raise serializers.ValidationError('رمز عبور باید حداقل یک نماد (مثل !@#$%) داشته باشد.')
+    return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
+    new_password_confirm = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
+
+    def validate_new_password(self, value):
+        return validate_strong_password(value)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({'new_password_confirm': 'تکرار رمز عبور با رمز جدید یکسان نیست.'})
+        user = self.context.get('request').user
+        if not user.check_password(attrs['old_password']):
+            raise serializers.ValidationError({'old_password': 'رمز عبور فعلی صحیح نیست.'})
+        return attrs
 
 
 class SerDepartmentList(serializers.ModelSerializer):

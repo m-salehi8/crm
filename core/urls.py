@@ -31,6 +31,7 @@ urlpatterns = [
 
     path('get-user/', GetUser.as_view()),
     path('change-password/', ChangePassword.as_view()),
+    path('change-password/v2/', ChangePasswordV2.as_view()),
     path('reset-password/', ResetPassword.as_view()),
     path('department-list/', DepartmentList.as_view()),
     path('user-photo-update/', UserPhotoUpdate.as_view()),
@@ -63,7 +64,8 @@ urlpatterns = [
     path('available_dashboards/', available_dashboards, name='available_dashboards'),
 
     path('available_cards/', AvailableDashboardsView.as_view(), name='available_cards'),
-    path('sms/verify/', SmsVerifyWebhookApi.as_view(), )
+    path('sms/verify/', SmsVerifyWebhookApi.as_view(), ),
+    path('media-download/', MediaDownloadView.as_view(), name='media-download'),
 ]
 
 
